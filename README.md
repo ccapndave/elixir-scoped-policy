@@ -1,7 +1,6 @@
 # ScopedPolicy
 
-**TODO: Add description**
-
+Macros to add scoping and other features to Elixir Bodyguard policies.
 ## Installation
 
 The package can be installed by adding `scoped_policy` to your list of dependencies in `mix.exs`:

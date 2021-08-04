@@ -9,6 +9,13 @@ defmodule ScopedPolicy.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
 
+      # Hex
+      description: "Macros to add scoping and other features to Elixir Bodyguard policies",
+      package: %{
+        licenses: ["MIT"],
+        links: %{"GitHub" => "https://github.com/ccapndave/elixir-scoped-policy"}
+      },
+
       # Docs
       name: "ScopedPolicy",
       source_url: "https://github.com/ccapndave/elixir-scoped-policy",
