@@ -84,11 +84,9 @@ defmodule ScopedPolicy do
     within the scope.
 
     * `:allow_all?` - this ignores any functions within the scope.  The authorization will always suceed.
-
-    * `:debug` - if this is true, output debug information using the Elixir [Logger](https://hexdocs.pm/logger/1.12/Logger.html)
   """
   defmacro scoped_policy(opts, block) do
-    module_name = :"ScopedPolicy#{:erlang.phash2(opts)}"
+    module_name = :"Elixir.ScopedPolicy#{make_ref() |> :erlang.ref_to_list() |> Enum.join()}"
 
     quote do
       defmodule unquote(module_name) do
@@ -100,8 +98,16 @@ defmodule ScopedPolicy do
     end
   end
 
-  defmacro __using__(_opts) do
+  @doc """
+  Configure a module to use scoped policies.
+
+  ## Options
+
+    * `:debug` - if this is true, output debug information using the Elixir [Logger](https://hexdocs.pm/logger/1.12/Logger.html)
+  """
+  defmacro __using__(opts) do
     quote do
+      @opts unquote(opts)
       Module.register_attribute(__MODULE__, :policies, accumulate: true)
 
       @before_compile ScopedPolicy
@@ -110,33 +116,52 @@ defmodule ScopedPolicy do
     end
   end
 
-  defmacro __before_compile__(_env) do
+  defmacro __before_compile__(env) do
+    policies = env.module |> Module.get_attribute(:policies)
+
+    match_policy_fns =
+      Enum.map(policies, fn {_, opts} = policy ->
+        match =
+          case Keyword.get(opts, :matches) do
+            nil ->
+              quote(do: _)
+
+            pattern ->
+              Macro.escape(pattern)
+          end
+
+        quote do
+          def match_policy(unquote(match)),
+            do: unquote(Macro.escape(policy))
+        end
+      end) ++
+        [
+          quote do
+            def match_policy(_), do: nil
+          end
+        ]
+
     quote do
       require Logger
       @behaviour Bodyguard.Policy
 
       if length(@policies) > 0 do
+        unquote(match_policy_fns)
+
         def authorize(action, object, params) do
-          matching_policy =
-            Enum.find(@policies, fn {module_name, opts} ->
-              case Keyword.get(opts, :matches) do
-                nil -> List.first(@policies)
-                values when is_list(values) -> values |> Enum.any?(&match?(^&1, object))
-                value -> match?(^value, object)
-              end
-            end)
+          matching_policy = match_policy(object)
+
+          if Keyword.get(@opts, :debug) do
+            Logger.debug(
+              "authorize called with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
+            )
+          end
 
           case matching_policy do
             nil ->
               false
 
             {module_name, opts} ->
-              if get_option(opts, :debug),
-                do:
-                  Logger.debug(
-                    "authorize called with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
-                  )
-
               cond do
                 get_option(opts, :allow_all?) == true ->
                   true

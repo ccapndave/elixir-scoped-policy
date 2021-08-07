@@ -43,7 +43,7 @@ defmodule PolicyTest do
       def authorize(_action, _object, _params), do: false
     end
 
-    use ScopedPolicy
+    use ScopedPolicy, debug: true
 
     def focus_object(%{current_user: current_user}), do: current_user
 
@@ -51,6 +51,15 @@ defmodule PolicyTest do
                   focus_object: &TestFocusObjectPolicy.focus_object/1 do
       def authorize(:check, :dave, _params), do: true
       def authorize(_action, _object, _params), do: false
+    end
+  end
+
+  defmodule TestMapMatches do
+    use ScopedPolicy
+
+    scoped_policy matches: %{a: 1} do
+      def authorize(:one, _object, _params), do: true
+      def authroize(_action, _object, _params), do: false
     end
   end
 
@@ -79,5 +88,9 @@ defmodule PolicyTest do
                app_mode: :one,
                current_user: :dave
              })
+  end
+
+  test "matches" do
+    assert :ok = Bodyguard.permit(TestMapMatches, :one, %{a: 1, b: 2, c: 3})
   end
 end
