@@ -152,9 +152,17 @@ defmodule ScopedPolicy do
           matching_policy = match_policy(object)
 
           if Keyword.get(@opts, :debug) do
-            Logger.debug(
-              "authorize called with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
-            )
+            case matching_policy do
+              {_, opts} ->
+                Logger.debug(
+                  "authorize matched policy #{inspect(opts)} with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
+                )
+
+              nil ->
+                Logger.debug(
+                  "authorize couldn't match a policy with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
+                )
+            end
           end
 
           case matching_policy do
