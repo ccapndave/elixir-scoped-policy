@@ -3,7 +3,7 @@ defmodule PolicyTest do
   doctest ScopedPolicy
 
   defmodule TestPolicy do
-    use ScopedPolicy
+    use ScopedPolicy, log_level: :info
 
     scoped_policy matches: :a do
       def authorize(:works_with_a, _object, _params), do: true

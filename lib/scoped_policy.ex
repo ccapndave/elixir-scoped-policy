@@ -103,7 +103,8 @@ defmodule ScopedPolicy do
 
   ## Options
 
-    * `:debug` - if this is true, output debug information using the Elixir [Logger](https://hexdocs.pm/logger/1.12/Logger.html)
+    * `:log_level` - choose the level that this library logs at (using [Logger](https://hexdocs.pm/logger/1.12/Logger.html)).
+                     If this isn't set, the library will log at `:debug` by default.
   """
   defmacro __using__(opts) do
     quote do
@@ -151,18 +152,20 @@ defmodule ScopedPolicy do
         def authorize(action, object, params) do
           matching_policy = match_policy(object)
 
-          if Keyword.get(@opts, :debug) do
-            case matching_policy do
-              {_, opts} ->
-                Logger.debug(
-                  "authorize matched policy #{inspect(opts)} with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
-                )
+          log_level = Keyword.get(@opts, :log_level, :debug)
 
-              nil ->
-                Logger.debug(
-                  "authorize couldn't match a policy with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
-                )
-            end
+          case matching_policy do
+            {_, opts} ->
+              Logger.log(
+                log_level,
+                "authorize matched policy #{inspect(opts)} with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
+              )
+
+            nil ->
+              Logger.log(
+                log_level,
+                "authorize couldn't match a policy with [action: #{inspect(action)}, object: #{inspect(object)}, params: #{inspect(params)}]"
+              )
           end
 
           case matching_policy do
