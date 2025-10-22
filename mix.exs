@@ -36,7 +36,7 @@ defmodule ScopedPolicy.MixProject do
   defp deps do
     [
       {:bodyguard, "~> 2.4.1"},
-      {:mix_test_watch, "~> 1.0.3", only: :dev, runtime: false},
+      {:mix_test_watch, "~> 1.4.0", only: :dev, runtime: false},
       {:ex_doc, "~> 0.24", only: :dev, runtime: false}
     ]
   end
