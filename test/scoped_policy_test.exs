@@ -35,6 +35,17 @@ defmodule PolicyTest do
     end
   end
 
+  defmodule TestFocusObjectPolicyWithMF do
+    use ScopedPolicy
+
+    def focus_object(%{current_user: current_user}), do: current_user
+
+    scoped_policy focus_object: {TestFocusObjectPolicy, :focus_object} do
+      def authorize(:check_dave, :dave, _params), do: true
+      def authorize(_action, _object, _params), do: false
+    end
+  end
+
   defmodule TestParentPolicy do
     defmodule ParentPolicy do
       use ScopedPolicy
@@ -75,6 +86,14 @@ defmodule PolicyTest do
   end
 
   test "focus object" do
+    assert :ok =
+             Bodyguard.permit(TestFocusObjectPolicy, :check_dave, %{
+               app_mode: :one,
+               current_user: :dave
+             })
+  end
+
+  test "focus object with focus_object defined as module/func" do
     assert :ok =
              Bodyguard.permit(TestFocusObjectPolicy, :check_dave, %{
                app_mode: :one,

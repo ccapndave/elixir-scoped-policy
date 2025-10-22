@@ -81,7 +81,9 @@ defmodule ScopedPolicy do
 
     * `:focus_object` - a captured function that is applied to the `object` before the `authorize`
     functions are called in this scope.  This is used to _focus_ the object into the relevant shape
-    within the scope.
+    within the scope.  This can be also be defined in the config as an MF (i.e. {module, function})
+    using `config :scoped_policy, :focus_object, {MyModule, :my_function}` where my_function has an
+    arity of 1.
 
     * `:allow_all?` - this ignores any functions within the scope.  The authorization will always suceed.
   """
@@ -178,7 +180,14 @@ defmodule ScopedPolicy do
                   true
 
                 true ->
-                  focus_object = get_option(opts, :focus_object, & &1)
+                  focus_object =
+                    case get_option(opts, :focus_object, & &1) do
+                      {module, function} when is_atom(module) and is_atom(function) ->
+                        Function.capture(module, function, 1)
+
+                      fun when is_function(fun, 1) ->
+                        fun
+                    end
 
                   parent_policy_authorization =
                     case get_option(opts, :parent_policy) do
